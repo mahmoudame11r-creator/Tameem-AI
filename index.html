@@ -94,11 +94,51 @@ async function generateVideo() {
     const statusText = document.getElementById('statusText');
     const videoContainer = document.getElementById('videoResult');
     const videoElement = document.getElementById('finalVideo');
-    const downloadBtn = document.getElementById('downloadBtn');
 
     if (!token || !prompt) {
-        alert('يرجى إدخال المفتاح ووصف المشهد');
+        alert('حط المفتاح واكتب الوصف بالانجليزي يا بطل');
         return;
+    }
+
+    loader.style.display = 'block';
+    statusText.style.display = 'block';
+    statusText.innerText = "جاري استدعاء الذكاء الاصطناعي... ثواني وهتنبهر!";
+    videoContainer.style.display = 'none';
+
+    try {
+        // هنستخدم موديل صور فائق السرعة عشان نكسر نحس الـ Fetch
+        const response = await fetch(
+            "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
+            {
+                method: "POST",
+                headers: { 
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json" 
+                },
+                body: JSON.stringify({ inputs: prompt }),
+            }
+        );
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || "تأكد من المفتاح");
+        }
+
+        const blob = await response.blob();
+        const imageUrl = URL.createObjectURL(blob);
+        
+        // تعديل بسيط عشان نعرض الصورة في مكان الفيديو مؤقتاً للتأكد من الشغل
+        videoContainer.innerHTML = `<img src="${imageUrl}" class="w-full h-full object-cover rounded-lg"><a href="${imageUrl}" download="Tameem-AI.png" class="block bg-green-600 text-white text-xs py-2 mt-2 rounded">تحميل النتيجة ⬇</a>`;
+        videoContainer.style.display = 'block';
+        statusText.innerText = "✅ مبروك! أول تصميم من تميم AI شغال!";
+
+    } catch (error) {
+        alert("فيه مشكلة في المفتاح أو السيرفر: " + error.message);
+        statusText.innerText = "فشل الاتصال";
+    } finally {
+        loader.style.display = 'none';
+    }
+}
     }
 
     loader.style.display = 'block';
